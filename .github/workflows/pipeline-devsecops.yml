@@ -1,0 +1,87 @@
+name: DevSecOps pipeline - SAST / SCA / Build / Image Scan
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+    branches:
+      - '**'
+
+jobs:
+  sast:
+    name: SAST - SonarCloud
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: SonarCloud Scan
+        uses: sonarsource/sonarcloud-github-action@v1
+        with:
+          args: >
+            -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+            -Dsonar.qualitygate.wait=true
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  sca:
+    name: SCA - Dependency-Check
+    runs-on: ubuntu-latest
+    needs: sast
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Run OWASP Dependency-Check
+        uses: dependency-check/Dependency-Check_Action@main
+        id: depcheck
+        with:
+          project: 'devsecops-laboratorio'
+          path: '.'
+          format: 'ALL'
+          args: >
+            --failOnCVSS 4
+            --out ${{ github.workspace }}/depcheck-reports
+      - name: Upload dependency-check reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-check-reports
+          path: ${{ github.workspace }}/depcheck-reports
+
+  build-image:
+    name: Build Docker image
+    runs-on: ubuntu-latest
+    needs: sca
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Build image (local tag)
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: false
+          tags: local-image:dev-$GITHUB_RUN_ID
+      - name: Save image ref
+        run: echo "IMAGE_REF=local-image:dev-$GITHUB_RUN_ID" >> $GITHUB_ENV
+
+  image-scan:
+    name: Image scan - Trivy
+    runs-on: ubuntu-latest
+    needs: build-image
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Run Trivy (scan image)
+        uses: aquasecurity/trivy-action@v0.33.1
+        with:
+          image-ref: ${{ env.IMAGE_REF }}
+          scan-type: image
+          format: 'table'
+          exit-code: '1'
+          severity: 'CRITICAL,HIGH,MEDIUM'
+          vuln-type: 'os,library'
+          output: 'trivy-report.txt'
+      - name: Upload Trivy report
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-report
+          path: trivy-report.txt
