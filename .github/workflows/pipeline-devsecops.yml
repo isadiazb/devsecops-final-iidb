@@ -62,8 +62,8 @@ jobs:
           args: >
             -Dsonar.organization=isadiazb
             -Dsonar.projectKey=devsecops-final-iidb
-            -Dsonar.qualitygate.wait=true # Espera el resultado del Quality Gate antes de terminar el job
-
+            -Dsonar.qualitygate.wait=true
+            
   # --------------------------
   # Job 2: SCA (Dependency Check)
   # --------------------------
