@@ -58,7 +58,7 @@ jobs:
             -Dsonar.projectKey=isadiazb_devsecops-final-iidb
             -Dsonar.qualitygate.wait=true
 
-    # --------------------------
+  # --------------------------
   # Job 2: SCA - Dependency Check sin NVD API Key
   # --------------------------
   sca:
@@ -81,7 +81,7 @@ jobs:
           mkdir -p reports
           $HOME/dependency-check/dependency-check/bin/dependency-check.sh \
             --scan . \
-            --format "HTML,XML,JSON" \
+            --format ALL \
             --project "DevSecOps-Final-IIDB" \
             --out reports \
             --failOnCVSS 9 \
@@ -92,7 +92,6 @@ jobs:
         with:
           name: dependency-check-report
           path: reports
-
 
   # --------------------------
   # Job 3: Build Docker image
