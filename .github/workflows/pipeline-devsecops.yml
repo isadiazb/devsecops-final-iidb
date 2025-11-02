@@ -59,22 +59,39 @@ jobs:
             -Dsonar.qualitygate.wait=true
 
   # --------------------------
-  # Job 2: SCA (analiza dependencias)
+  # Job 2: SCA (análisis de dependencias con OWASP Dependency-Check)
   # --------------------------
   sca:
     name: SCA - Dependency Check
     runs-on: ubuntu-latest
-    # needs: sast
+    # needs: sast   # lo dejamos comentado para que se ejecute aunque SAST falle
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      - name: Run Dependency Check
-        uses: dependency-check/scan-action@v2
+
+      - name: Instalar OWASP Dependency-Check
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y unzip wget
+          wget https://github.com/jeremylong/DependencyCheck/releases/download/v9.0.9/dependency-check-9.0.9-release.zip
+          unzip dependency-check-9.0.9-release.zip -d $HOME/dependency-check
+          export PATH=$HOME/dependency-check/dependency-check/bin:$PATH
+
+      - name: Ejecutar Dependency-Check
+        run: |
+          mkdir -p reports
+          $HOME/dependency-check/dependency-check/bin/dependency-check.sh \
+            --scan . \
+            --format ALL \
+            --project "DevSecOps-Final-IIDB" \
+            --out reports \
+            --failOnCVSS 7
+
+      - name: Subir reporte de Dependency-Check
+        uses: actions/upload-artifact@v4
         with:
-          project: devsecops-laboratorio
-          scan: .
-          format: 'ALL'
-          failOnCVSS: 7
+          name: dependency-check-report
+          path: reports
 
   # --------------------------
   # Job 3: Build Docker image
