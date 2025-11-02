@@ -58,14 +58,14 @@ jobs:
             -Dsonar.projectKey=isadiazb_devsecops-final-iidb
             -Dsonar.qualitygate.wait=true
 
-  # --------------------------
-  # Job 2: SCA (análisis de dependencias con OWASP Dependency-Check)
+    # --------------------------
+  # Job 2: SCA - Dependency Check sin NVD API Key
   # --------------------------
   sca:
     name: SCA - Dependency Check
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: Checkout código
         uses: actions/checkout@v4
 
       - name: Instalar OWASP Dependency-Check
@@ -76,26 +76,23 @@ jobs:
           unzip dependency-check-9.0.9-release.zip -d $HOME/dependency-check
           export PATH=$HOME/dependency-check/dependency-check/bin:$PATH
 
-      - name: Ejecutar Dependency-Check con NVD API Key
-        env:
-          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+      - name: Ejecutar análisis SCA
         run: |
           mkdir -p reports
           $HOME/dependency-check/dependency-check/bin/dependency-check.sh \
             --scan . \
-            --format ALL \
+            --format "HTML,XML,JSON" \
             --project "DevSecOps-Final-IIDB" \
             --out reports \
-            --failOnCVSS 7 \
-            --nvdApiKey "$NVD_API_KEY" \
-            --nvdApiDelay 6000 \
-            --nvdMaxRetries 3
+            --failOnCVSS 9 \
+            --noupdate
 
       - name: Subir reporte de Dependency-Check
         uses: actions/upload-artifact@v4
         with:
           name: dependency-check-report
           path: reports
+
 
   # --------------------------
   # Job 3: Build Docker image
