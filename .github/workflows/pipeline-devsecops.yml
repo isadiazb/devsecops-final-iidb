@@ -59,13 +59,13 @@ jobs:
             -Dsonar.qualitygate.wait=true
 
   # --------------------------
-  # Job 2: SCA (Análisis de dependencias con OWASP Dependency-Check - sin API Key)
+  # Job 2: SCA (análisis de dependencias con OWASP Dependency-Check)
   # --------------------------
   sca:
-    name: SCA - Dependency Check (Mirror OWASP)
+    name: SCA - Dependency Check
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout código
+      - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Instalar OWASP Dependency-Check
@@ -76,19 +76,20 @@ jobs:
           unzip dependency-check-9.0.9-release.zip -d $HOME/dependency-check
           export PATH=$HOME/dependency-check/dependency-check/bin:$PATH
 
-      - name: Ejecutar análisis SCA con mirror OWASP
+      - name: Ejecutar Dependency-Check con NVD API Key
+        env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
         run: |
           mkdir -p reports
           $HOME/dependency-check/dependency-check/bin/dependency-check.sh \
             --scan . \
-            --format "HTML,XML,JSON" \
+            --format ALL \
             --project "DevSecOps-Final-IIDB" \
             --out reports \
             --failOnCVSS 7 \
-            --dataMirrorURL https://jeremylong.github.io/DependencyCheckData/mirror/ \
-            --cveUrl12Modified https://jeremylong.github.io/DependencyCheckData/nvdcve-1.2-modified.json.gz \
-            --cveUrl20Modified https://jeremylong.github.io/DependencyCheckData/nvdcve-2.0-modified.json.gz \
-            --cveUrl20Base https://jeremylong.github.io/DependencyCheckData/nvdcve-2.0-%d.json.gz
+            --nvdApiKey "$NVD_API_KEY" \
+            --nvdApiDelay 6000 \
+            --nvdMaxRetries 3
 
       - name: Subir reporte de Dependency-Check
         uses: actions/upload-artifact@v4
