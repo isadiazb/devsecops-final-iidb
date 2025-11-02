@@ -59,13 +59,13 @@ jobs:
             -Dsonar.qualitygate.wait=true
 
   # --------------------------
-  # Job 2: SCA (análisis de dependencias con OWASP Dependency-Check)
+  # Job 2: SCA (Análisis de dependencias con OWASP Dependency-Check - sin API Key)
   # --------------------------
   sca:
-    name: SCA - Dependency Check
+    name: SCA - Dependency Check (Mirror OWASP)
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: Checkout código
         uses: actions/checkout@v4
 
       - name: Instalar OWASP Dependency-Check
@@ -76,25 +76,25 @@ jobs:
           unzip dependency-check-9.0.9-release.zip -d $HOME/dependency-check
           export PATH=$HOME/dependency-check/dependency-check/bin:$PATH
 
-      - name: Ejecutar Dependency-Check con NVD API Key
-        env:
-          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+      - name: Ejecutar análisis SCA con mirror OWASP
         run: |
           mkdir -p reports
           $HOME/dependency-check/dependency-check/bin/dependency-check.sh \
             --scan . \
-            --format ALL \
+            --format "HTML,XML,JSON" \
             --project "DevSecOps-Final-IIDB" \
             --out reports \
             --failOnCVSS 7 \
-            --nvdApiKey "$NVD_API_KEY"
+            --dataMirrorURL https://jeremylong.github.io/DependencyCheckData/mirror/ \
+            --cveUrl12Modified https://jeremylong.github.io/DependencyCheckData/nvdcve-1.2-modified.json.gz \
+            --cveUrl20Modified https://jeremylong.github.io/DependencyCheckData/nvdcve-2.0-modified.json.gz \
+            --cveUrl20Base https://jeremylong.github.io/DependencyCheckData/nvdcve-2.0-%d.json.gz
 
       - name: Subir reporte de Dependency-Check
         uses: actions/upload-artifact@v4
         with:
           name: dependency-check-report
           path: reports
-
 
   # --------------------------
   # Job 3: Build Docker image
