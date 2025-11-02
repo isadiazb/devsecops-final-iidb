@@ -3,7 +3,6 @@
 
 name: DevSecOps Pipeline
 
-# Se ejecuta en cualquier push o pull request
 on:
   push:
     branches:
@@ -58,62 +57,61 @@ jobs:
             -Dsonar.projectKey=isadiazb_devsecops-final-iidb
             -Dsonar.qualitygate.wait=true
 
-# --------------------------
-# Job 2: SCA (Dependency Check)
-# --------------------------
-sca:
-  name: SCA - Dependency Check
-  runs-on: ubuntu-latest
-  steps:
-  - name: Checkout code
-    uses: actions/checkout@v4
+  # --------------------------
+  # Job 2: SCA (Dependency Check)
+  # --------------------------
+  sca:
+    name: SCA - Dependency Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-  - name: Setup Node.js
-    uses: actions/setup-node@v3
-    with:
-      node-version: '18' # ajusta según tu proyecto
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
 
-  - name: Install Node.js dependencies
-    run: |
-      npm ci
-      if [ -f functions/package-lock.json ]; then
-        cd functions && npm ci && cd ..
-      fi
+      - name: Install Node.js dependencies
+        run: |
+          npm ci
+          if [ -f functions/package-lock.json ]; then
+            cd functions && npm ci && cd ..
+          fi
 
-  - name: Setup Dependency-Check
-    run: |
-      sudo apt-get update
-      sudo apt-get install -y unzip wget openjdk-11-jdk
-      mkdir -p $HOME/dependency-check
-      wget https://github.com/jeremylong/DependencyCheck/releases/download/v12.1.0/dependency-check-12.1.0-release.zip -O dependency-check.zip
-      unzip -q dependency-check.zip -d $HOME/dependency-check
-      rm dependency-check.zip
-      export PATH=$HOME/dependency-check/dependency-check/bin:$PATH
+      - name: Setup Dependency-Check
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y unzip wget openjdk-11-jdk
+          mkdir -p $HOME/dependency-check
+          wget https://github.com/jeremylong/DependencyCheck/releases/download/v12.1.0/dependency-check-12.1.0-release.zip -O dependency-check.zip
+          unzip -q dependency-check.zip -d $HOME/dependency-check
+          rm dependency-check.zip
 
-  - name: Cache Dependency-Check NVD Database
-    uses: actions/cache@v3
-    with:
-      path: $HOME/.dependency-check
-      key: dependency-check-nvd-db-${{ runner.os }}
-      restore-keys: |
-        dependency-check-nvd-db-${{ runner.os }}
+      - name: Cache Dependency-Check NVD Database
+        uses: actions/cache@v3
+        with:
+          path: $HOME/.dependency-check
+          key: dependency-check-nvd-db-${{ runner.os }}
+          restore-keys: |
+            dependency-check-nvd-db-${{ runner.os }}
 
-  - name: Run Dependency Check Scan
-    run: |
-      mkdir -p reports
-      $HOME/dependency-check/dependency-check/bin/dependency-check.sh \
-        --scan . \
-        --format ALL \
-        --project "DevSecOps-Final-IIDB" \
-        --out reports \
-        --failOnCVSS 9 \
-        --noupdate
+      - name: Run Dependency Check Scan
+        run: |
+          mkdir -p reports
+          $HOME/dependency-check/dependency-check/bin/dependency-check.sh \
+            --scan . \
+            --format ALL \
+            --project "DevSecOps-Final-IIDB" \
+            --out reports \
+            --failOnCVSS 9 \
+            --noupdate
 
-  - name: Upload SCA reports
-    uses: actions/upload-artifact@v4
-    with:
-      name: dependency-check-reports
-      path: reports
+      - name: Upload SCA reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-check-reports
+          path: reports
 
   # --------------------------
   # Job 3: Build Docker image
@@ -125,12 +123,14 @@ sca:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
       - name: Build Docker image (local)
         uses: docker/build-push-action@v4
         with:
           context: .
           push: false
           tags: local-image:dev-$GITHUB_RUN_ID
+
       - name: Save image reference
         run: echo "IMAGE_REF=local-image:dev-$GITHUB_RUN_ID" >> $GITHUB_ENV
 
@@ -161,4 +161,3 @@ sca:
         with:
           name: trivy-report
           path: trivy-report.txt
-
