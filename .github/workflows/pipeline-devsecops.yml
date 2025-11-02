@@ -1,27 +1,27 @@
-# Este es mi pipeline de DevSecOps para la tarea final curso DevSecOps
-# Incluye SAST, SCA, Docker build y Trivy scan
+# Pipeline DevSecOps - tarea final curso DevSecOps
+# Incluye: SAST con SonarCloud, SCA, Docker build y Trivy scan
 
 name: DevSecOps Pipeline
 
-# Cuando se ejecuta: cada push o pull request a cualquier rama
+# Se ejecuta en cualquier push o pull request
 on:
   push:
     branches:
-      - '**'   # cualquier rama
+      - '**'
   pull_request:
     branches:
-      - '**'   # cualquier PR
+      - '**'
 
 jobs:
 
   # --------------------------
-  # Job 0: Debug secret
+  # Job 0: Check SONAR_TOKEN
   # --------------------------
   check-secret:
     name: Check SONAR_TOKEN
     runs-on: ubuntu-latest
     steps:
-      - name: Check SONAR_TOKEN exists
+      - name: Verificar si existe SONAR_TOKEN
         run: |
           if [ -z "${{ secrets.SONAR_TOKEN }}" ]; then
             echo "Secret SONAR_TOKEN no encontrado"
@@ -36,7 +36,7 @@ jobs:
   sast:
     name: SAST - SonarCloud
     runs-on: ubuntu-latest
-    needs: check-secret       # espera a que el job de debug termine
+    needs: check-secret
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -50,7 +50,7 @@ jobs:
       - name: Run SonarCloud Scan
         uses: sonarsource/sonarcloud-github-action@v1
         env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}   # paso el token con env
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
           args: >
             -Dsonar.qualitygate.wait=true
@@ -71,7 +71,7 @@ jobs:
           project: devsecops-laboratorio
           scan: .
           format: 'ALL'
-          failOnCVSS: 7   # falla si hay vulnerabilidades altas o críticas
+          failOnCVSS: 7
 
   # --------------------------
   # Job 3: Build Docker image
@@ -84,3 +84,38 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Build Docker image (local)
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: false
+          tags: local-image:dev-$GITHUB_RUN_ID
+      - name: Save image reference
+        run: echo "IMAGE_REF=local-image:dev-$GITHUB_RUN_ID" >> $GITHUB_ENV
+
+  # --------------------------
+  # Job 4: Scan Docker image con Trivy
+  # --------------------------
+  image-scan:
+    name: Image scan - Trivy
+    runs-on: ubuntu-latest
+    needs: build-image
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Trivy scan
+        uses: aquasecurity/trivy-action@v0.33.1
+        with:
+          image-ref: ${{ env.IMAGE_REF }}
+          scan-type: image
+          format: 'table'
+          exit-code: '1'
+          severity: 'CRITICAL,HIGH,MEDIUM'
+          vuln-type: 'os,library'
+          output: 'trivy-report.txt'
+
+      - name: Upload Trivy report
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-report
+          path: trivy-report.txt
