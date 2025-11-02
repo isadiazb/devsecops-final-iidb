@@ -53,6 +53,7 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
           args: >
+            -Dsonar.login=${{ secrets.SONAR_TOKEN }}
             -Dsonar.qualitygate.wait=true
 
   # --------------------------
@@ -119,3 +120,4 @@ jobs:
         with:
           name: trivy-report
           path: trivy-report.txt
+
