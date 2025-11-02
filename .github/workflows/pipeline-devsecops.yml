@@ -61,8 +61,8 @@ jobs:
           args: >
             -Dsonar.organization=isadiazb
             -Dsonar.projectKey=devsecops-final-iidb
-            -Dsonar.qualitygate.wait=true
             -Dsonar.branch.name=main
+            -Dsonar.qualitygate.wait=true
 
   # --------------------------
   # Job 2: SCA (Dependency Check)
