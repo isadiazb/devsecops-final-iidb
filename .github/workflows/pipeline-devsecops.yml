@@ -58,40 +58,39 @@ jobs:
             -Dsonar.projectKey=isadiazb_devsecops-final-iidb
             -Dsonar.qualitygate.wait=true
 
-  # --------------------------
-  # Job 2: SCA - Dependency Check sin NVD API Key
-  # --------------------------
-  sca:
-    name: SCA - Dependency Check
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout código
-        uses: actions/checkout@v4
+# --------------------------
+# Job 2: SCA (Dependency Check)
+# --------------------------
+sca:
+  name: SCA - Dependency Check
+  runs-on: ubuntu-latest
+  needs: sast
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-      - name: Instalar OWASP Dependency-Check
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y unzip wget
-          wget https://github.com/jeremylong/DependencyCheck/releases/download/v9.0.9/dependency-check-9.0.9-release.zip
-          unzip dependency-check-9.0.9-release.zip -d $HOME/dependency-check
-          export PATH=$HOME/dependency-check/dependency-check/bin:$PATH
+    - name: Setup Dependency-Check
+      run: |
+        mkdir -p $HOME/dependency-check
+        curl -sSL https://github.com/jeremylong/DependencyCheck/releases/download/v8.5.3/dependency-check-8.5.3-release.zip -o dependency-check.zip
+        unzip -q dependency-check.zip -d $HOME/dependency-check
+        rm dependency-check.zip
 
-      - name: Ejecutar análisis SCA
-        run: |
-          mkdir -p reports
-          $HOME/dependency-check/dependency-check/bin/dependency-check.sh \
-            --scan . \
-            --format ALL \
-            --project "DevSecOps-Final-IIDB" \
-            --out reports \
-            --failOnCVSS 9 \
-            --noupdate
-
-      - name: Subir reporte de Dependency-Check
-        uses: actions/upload-artifact@v4
-        with:
-          name: dependency-check-report
-          path: reports
+    - name: Run Dependency Check Scan
+      run: |
+        mkdir -p reports
+        $HOME/dependency-check/dependency-check/bin/dependency-check.sh \
+          --scan . \
+          --format ALL \
+          --project "DevSecOps-Final-IIDB" \
+          --out reports \
+          --failOnCVSS 9
+          
+    - name: Upload SCA reports
+      uses: actions/upload-artifact@v4
+      with:
+        name: dependency-check-reports
+        path: reports
 
   # --------------------------
   # Job 3: Build Docker image
