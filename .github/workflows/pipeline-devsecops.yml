@@ -37,13 +37,13 @@ jobs:
     runs-on: ubuntu-latest
     needs: check-secret
     steps:
-    # Checkout completo del repositorio (fetch all branches)
+      # Checkout completo del repositorio (fetch all branches)
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0  # Necesario para que SonarCloud encuentre todas las ramas y main
 
-    # Configurar Java 17
+      # Configurar Java 17
       - name: Set up Java 17
         uses: actions/setup-java@v3
         with:
@@ -53,13 +53,11 @@ jobs:
       # Ejecutar SonarCloud Scan
       - name: Run SonarCloud Scan
         uses: sonarsource/sonarcloud-github-action@v2
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
-          args: >
-            -Dsonar.organization=isadiazb
-            -Dsonar.projectKey=devsecops-final-iidb
-            -Dsonar.qualitygate.wait=true
+          organization: isadiazb            # Tu organización en SonarCloud
+          projectKey: devsecops-final-iidb # El project key en SonarCloud
+          token: ${{ secrets.SONAR_TOKEN }}
+          waitForQualityGate: true          # Espera el resultado del Quality Gate
 
   # --------------------------
   # Job 2: SCA (Dependency Check)
