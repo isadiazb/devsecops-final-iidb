@@ -30,9 +30,9 @@ jobs:
           fi
 
 
-  # --------------------------
-  # Job 1: SAST - SonarCloud
-  # --------------------------
+ # --------------------------
+# Job 1: SAST - SonarCloud
+# --------------------------
   sast:
     name: Analisis SAST con SonarCloud
     runs-on: ubuntu-latest
@@ -42,7 +42,7 @@ jobs:
       - name: Checkout del código
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Esto es súper importante para que SonarCloud vea todas las ramas y la principal
+          fetch-depth: 0 # Importante para que SonarCloud vea todas las ramas y la principal
 
       # Configurar Java 17 (SonarScanner necesita Java)
       - name: Configurar Java 17
@@ -51,19 +51,19 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      # 3Ejecutar SonarCloud
+      # Ejecutar SonarCloud
       - name: Escaneo SonarCloud
         uses: sonarsource/sonarcloud-github-action@v2
         env:
-          # El token va como variable de entorno, así SonarCloud puede autenticar
+          # Token de SonarCloud
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
-          # Todo lo demás se pasa como args de sonar-scanner
           args: >
             -Dsonar.organization=isadiazb
             -Dsonar.projectKey=devsecops-final-iidb
             -Dsonar.qualitygate.wait=true
-            
+            -Dsonar.branch.name=main
+
   # --------------------------
   # Job 2: SCA (Dependency Check)
   # --------------------------
