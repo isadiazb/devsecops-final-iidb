@@ -63,6 +63,7 @@ jobs:
   sca:
     name: SCA - Dependency Check
     runs-on: ubuntu-latest
+    needs: sast
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -96,6 +97,15 @@ jobs:
           restore-keys: |
             dependency-check-nvd-db-${{ runner.os }}
 
+      - name: Initialize Dependency-Check DB (first time)
+        run: |
+          if [ ! -d "$HOME/.dependency-check/data" ]; then
+            echo "Database not found, updating..."
+            $HOME/dependency-check/dependency-check/bin/dependency-check.sh --update-only
+          else
+            echo "Database exists, skipping update"
+          fi
+
       - name: Run Dependency Check Scan
         run: |
           mkdir -p reports
@@ -123,14 +133,12 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
       - name: Build Docker image (local)
         uses: docker/build-push-action@v4
         with:
           context: .
           push: false
           tags: local-image:dev-$GITHUB_RUN_ID
-
       - name: Save image reference
         run: echo "IMAGE_REF=local-image:dev-$GITHUB_RUN_ID" >> $GITHUB_ENV
 
