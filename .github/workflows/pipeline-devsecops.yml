@@ -48,7 +48,7 @@ jobs:
       - name: Ejecutar CodeQL
         uses: github/codeql-action/analyze@v2
 
-  # --------------------------
+    # --------------------------
   # Job 2: SCA (Dependency Check)
   # --------------------------
   sca:
@@ -85,7 +85,7 @@ jobs:
           path: $HOME/.dependency-check
           key: dependency-check-nvd-db-${{ runner.os }}
           restore-keys: |
-            dependency-check-nvd-db-${{ runner.os}}
+            dependency-check-nvd-db-${{ runner.os }}
 
       - name: Ensure Dependency-Check DB exists
         run: |
@@ -96,7 +96,8 @@ jobs:
               --out reports-init \
               --project "DevSecOps-Final-IIDB" \
               --format HTML \
-              --failOnCVSS 0
+              --failOnCVSS 0 \
+              --disableOssIndex
           else
             echo "Database exists, skipping initialization"
           fi
@@ -104,19 +105,22 @@ jobs:
       - name: Run Dependency Check Scan
         run: |
           mkdir -p reports
+          echo "Ejecutando Dependency Check (falla si CVSS >= 4)..."
           $HOME/dependency-check/dependency-check/bin/dependency-check.sh \
             --scan . \
             --format ALL \
             --project "DevSecOps-Final-IIDB" \
             --out reports \
-            --failOnCVSS 9 \
-            --noupdate
+            --failOnCVSS 4 \
+            --noupdate \
+            --disableOssIndex
 
       - name: Upload SCA reports
         uses: actions/upload-artifact@v4
         with:
           name: dependency-check-reports
           path: reports
+
 
   # --------------------------
   # Job 3: Build Docker image
