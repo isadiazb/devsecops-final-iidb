@@ -107,7 +107,7 @@ jobs:
     name: Build Docker image
     runs-on: ubuntu-latest
     steps:
-      # Traemos el código, porque necesitamos el Dockerfile y todo el contexto
+      # Traemos el código del repo porque necesitamos el Dockerfile y el contexto
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -115,11 +115,11 @@ jobs:
       - name: Build Docker image (local)
         uses: docker/build-push-action@v4
         with:
-          context: .  # contexto de build: la raíz del repo
-          push: false # no subimos a Docker Hub, solo construimos local
-          tags: local-image:dev-${{ github.run_id }} # tag único usando el run_id
+          context: .                  # '.' significa que usamos la raíz del repo
+          push: false                 # no queremos subir la imagen a Docker Hub, solo local
+          tags: local-image:dev-${{ github.run_id }}  # tag único usando el ID del workflow
 
-      # Guardamos el tag de la imagen en una variable de entorno
+      # Guardamos el tag de la imagen en una variable para usarla en otros jobs
       - name: Save image reference
         run: |
           # Esto permite usar IMAGE_REF en otros jobs
@@ -132,9 +132,9 @@ jobs:
   image-scan:
     name: Image scan - Trivy
     runs-on: ubuntu-latest
-    needs: build-image  # muy importante: espera que build-image termine
+    needs: build-image  # Muy importante: este job espera a que build-image termine
     steps:
-      # Traemos el código (necesario para algunas acciones de GitHub)
+      # Traemos el código del repo (necesario para algunas acciones de GitHub)
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -142,13 +142,13 @@ jobs:
       - name: Run Trivy scan
         uses: aquasecurity/trivy-action@0.33.0
         with:
-          image-ref: ${{ env.IMAGE_REF }}  # aquí usamos la variable del build
+          image-ref: ${{ env.IMAGE_REF }}   # aquí usamos la variable del build
           scan-type: image
           format: 'table'
-          exit-code: '1' # falla el workflow si encuentra vulnerabilidades CRITICAL, HIGH o MEDIUM
+          exit-code: '1'                     # workflow falla si hay vulnerabilidades CRITICAL/HIGH/MEDIUM
           severity: 'CRITICAL,HIGH,MEDIUM'
           vuln-type: 'os,library'
-          output: 'trivy-report.txt'
+          output: 'trivy-report.txt'         # reporte que luego subimos
 
       # Subimos el reporte como artifact para verlo después
       - name: Upload Trivy report
@@ -156,4 +156,5 @@ jobs:
         with:
           name: trivy-report
           path: trivy-report.txt
+
 
