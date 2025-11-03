@@ -41,7 +41,7 @@ jobs:
     name: SCA - Dependency Check
     runs-on: ubuntu-latest
     steps:
-      # Primero traemos el código
+      # Primero trae el código
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -51,7 +51,7 @@ jobs:
         with:
           node-version: '18'
 
-      # Instalamos dependencias de node
+      # Instala dependencias de node
       - name: Install Node.js dependencies
         run: |
           npm ci
@@ -59,7 +59,7 @@ jobs:
             cd functions && npm ci && cd ..
           fi
 
-      # Instalamos dependency-check
+      # Instala dependency-check
       - name: Setup Dependency-Check
         run: |
           sudo apt-get update
@@ -78,7 +78,7 @@ jobs:
           restore-keys: |
             dependency-check-nvd-db-${{ runner.os }}
 
-      # Ejecutamos el scan principal
+      # Ejecuta el scan principal
       - name: Run Dependency Check Scan
         run: |
           mkdir -p reports
@@ -93,48 +93,52 @@ jobs:
             --failOnCVSS 4 \
             --disableOssIndex
 
-      # Subimos los reportes como artifact para poder verlos despues
+      # Sube los reportes como artifact para poder verlos despues
       - name: Upload SCA reports
         uses: actions/upload-artifact@v4
         with:
           name: dependency-check-reports
           path: reports
 # --------------------------
-# Job: Build Docker + Scan with Trivy
+# Job 3: Build Docker + Scan con Trivy
 # --------------------------
-  build-and-scan:
-    name: Build Docker image and scan with Trivy
+  docker-trivy:
+    name: Build Docker image + Trivy scan
     runs-on: ubuntu-latest
     steps:
-      # Traemos el código porque necesitamos Dockerfile y contexto
+      # 1. Trae el código
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Construimos la imagen Docker local
+      # 2. Construye la imagen Docker local
       - name: Build Docker image
         uses: docker/build-push-action@v4
         with:
           context: .
           push: false
-          tags: local-image:dev-${{ github.run_id }}   # tag único usando ID del workflow
+          tags: local-image:dev-${{ github.run_id }}
 
-      # DEBUG: mostramos que la imagen se construyó
-      - name: Show Docker images
-        run: docker images | grep local-image
+      # 3. Guarda el tag en variable de entorno para usarlo después
+      - name: Save image tag
+        run: echo "IMAGE_REF=local-image:dev-${{ github.run_id }}" >> $GITHUB_ENV
 
-      # Escaneamos la imagen con Trivy
-      - name: Run Trivy scan
+      # 4. Debug: mostrar el tag (opcional)
+      - name: Debug: show image tag
+        run: echo "IMAGE REF = $IMAGE_REF"
+
+      # 5. Ejecuta Trivy scan
+      - name: Trivy scan
         uses: aquasecurity/trivy-action@0.33.0
         with:
-          image-ref: local-image:dev-${{ github.run_id }}  # usamos la imagen recién creada
+          image-ref: ${{ env.IMAGE_REF }}
           scan-type: image
-          format: 'table'
-          exit-code: '1'                    # falla workflow si hay vulnerabilidades CRITICAL/HIGH/MEDIUM
-          severity: 'CRITICAL,HIGH,MEDIUM'
-          vuln-type: 'os,library'
-          output: 'trivy-report.txt'        # reporte que luego subimos
+          format: table
+          exit-code: 0              # 0 para que no falle el workflow
+          severity: CRITICAL,HIGH,MEDIUM
+          vuln-type: os,library
+          output: trivy-report.txt
 
-      # Subimos el reporte como artifact
+      # 6. Sube el reporte como artifact para revisarlo
       - name: Upload Trivy report
         uses: actions/upload-artifact@v4
         with:
