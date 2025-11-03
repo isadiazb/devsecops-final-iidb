@@ -87,25 +87,9 @@ jobs:
           restore-keys: |
             dependency-check-nvd-db-${{ runner.os }}
 
-      - name: Ensure Dependency-Check DB exists
-        run: |
-          if [ ! -d "$HOME/.dependency-check/data" ]; then
-            echo "Database not found, running first scan to initialize DB..."
-            $HOME/dependency-check/dependency-check/bin/dependency-check.sh \
-              --scan . \
-              --out reports-init \
-              --project "DevSecOps-Final-IIDB" \
-              --format HTML \
-              --failOnCVSS 0 \
-              --disableOssIndex
-          else
-            echo "Database exists, skipping initialization"
-          fi
-
       - name: Run Dependency Check Scan
         run: |
           mkdir -p reports
-          echo "Ejecutando Dependency Check (falla si CVSS >= 4)..."
           $HOME/dependency-check/dependency-check/bin/dependency-check.sh \
             --scan . \
             --format ALL \
@@ -120,6 +104,7 @@ jobs:
         with:
           name: dependency-check-reports
           path: reports
+
 
 
   # --------------------------
