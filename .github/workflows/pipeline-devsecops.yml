@@ -152,7 +152,7 @@ jobs:
   image-scan:
     name: Image scan - Trivy
     runs-on: ubuntu-latest
-    # needs: build-image  # descomentario si quieres que dependa del build
+    needs: build-image
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
