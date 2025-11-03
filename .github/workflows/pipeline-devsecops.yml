@@ -122,10 +122,6 @@ jobs:
       - name: Save image tag
         run: echo "IMAGE_REF=local-image:dev-${{ github.run_id }}" >> $GITHUB_ENV
 
-      # 4. Debug: mostrar el tag (opcional)
-      - name: Debug: show image tag
-        run: echo "IMAGE REF = $IMAGE_REF"
-
       # 5. Ejecuta Trivy scan
       - name: Trivy scan
         uses: aquasecurity/trivy-action@0.33.0
