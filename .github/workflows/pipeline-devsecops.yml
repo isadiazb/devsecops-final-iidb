@@ -44,6 +44,7 @@ jobs:
   sca:
     name: SCA - Dependency Check (Simulado)
     runs-on: ubuntu-latest
+    needs: sast
     steps:
       # Clona el codigo
       - name: Checkout code
@@ -92,6 +93,7 @@ jobs:
   docker-trivy:
     name: Build Docker image + Trivy scan
     runs-on: ubuntu-latest
+    needs: sca
     steps:
       # 1. Clona el codigo
       - name: Checkout code
