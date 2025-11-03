@@ -77,6 +77,7 @@ jobs:
             exit 1
           else
             echo "No vulnerabilities found."
+          fi
           
       # 4. Sube el reporte como artifact
       - name: Upload SCA report
