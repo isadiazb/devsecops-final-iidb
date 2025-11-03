@@ -117,24 +117,34 @@ jobs:
           name: dependency-check-reports
           path: reports
 
-  # --------------------------
-  # Job 3: Build Docker image
-  # --------------------------
+# --------------------------
+# Job 3: Build Docker image
+# --------------------------
   build-image:
     name: Build Docker image
     runs-on: ubuntu-latest
-    # needs: sca
+    # needs: sca  # Se puede activar si quieres que espere a que SCA termine
     steps:
+      # Primero traemos el código
       - name: Checkout code
         uses: actions/checkout@v4
+        # Esto hace un "git clone" del repo para poder acceder a los archivos Dockerfile, etc.
+
+      # Construimos la imagen Docker local
       - name: Build Docker image (local)
         uses: docker/build-push-action@v4
         with:
-          context: .
-          push: false
-          tags: local-image:dev-$GITHUB_RUN_ID
+          context: .  # Contexto de build, normalmente la raíz del repo
+          push: false # No queremos subir la imagen a Docker Hub, solo construir local
+          # Corregimos el tag usando la variable correcta de GitHub Actions
+          tags: local-image:dev-${{ github.run_id }}
+
+      # Guardamos la referencia de la imagen en una variable de entorno
       - name: Save image reference
-        run: echo "IMAGE_REF=local-image:dev-$GITHUB_RUN_ID" >> $GITHUB_ENV
+        run: |
+          # Creamos una variable IMAGE_REF que vamos a usar en el scan con Trivy
+          echo "IMAGE_REF=local-image:dev-${{ github.run_id }}" >> $GITHUB_ENV
+          # $GITHUB_ENV es la forma correcta de pasar variables entre steps
 
   # --------------------------
   # Job 4: Scan Docker image con Trivy
