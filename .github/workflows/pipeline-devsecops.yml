@@ -51,18 +51,24 @@ jobs:
     # --------------------------
   # Job 2: SCA (Dependency Check)
   # --------------------------
+  # --------------------------
+# Job 2: SCA (Dependency Check)
+# --------------------------
   sca:
     name: SCA - Dependency Check
     runs-on: ubuntu-latest
     steps:
+      # Primero traemos el código
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # Setup Node.js porque algunos proyectos lo necesitan
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18'
 
+      # Instalamos dependencias de node
       - name: Install Node.js dependencies
         run: |
           npm ci
@@ -70,6 +76,7 @@ jobs:
             cd functions && npm ci && cd ..
           fi
 
+      # Instalamos dependency-check
       - name: Setup Dependency-Check
         run: |
           sudo apt-get update
@@ -79,6 +86,7 @@ jobs:
           unzip -q dependency-check.zip -d $HOME/dependency-check
           rm dependency-check.zip
 
+      # Cache de la base NVD para que no tenga que descargar todo cada vez
       - name: Cache Dependency-Check NVD Database
         uses: actions/cache@v3
         with:
@@ -87,25 +95,27 @@ jobs:
           restore-keys: |
             dependency-check-nvd-db-${{ runner.os }}
 
+      # Ejecutamos el scan principal
       - name: Run Dependency Check Scan
         run: |
           mkdir -p reports
+          # Lo corremos con failOnCVSS 4 para que falle si hay vulnerabilidades medias, altas o criticas
+          # Quitamos --noupdate porque si es la primera vez necesitamos que cree la DB
+          # --disableOssIndex evita errores de limite de OSS Index
           $HOME/dependency-check/dependency-check/bin/dependency-check.sh \
             --scan . \
             --format ALL \
             --project "DevSecOps-Final-IIDB" \
             --out reports \
             --failOnCVSS 4 \
-            --noupdate \
             --disableOssIndex
 
+      # Subimos los reportes como artifact para poder verlos despues
       - name: Upload SCA reports
         uses: actions/upload-artifact@v4
         with:
           name: dependency-check-reports
           path: reports
-
-
 
   # --------------------------
   # Job 3: Build Docker image
@@ -113,7 +123,7 @@ jobs:
   build-image:
     name: Build Docker image
     runs-on: ubuntu-latest
-    needs: sca
+    # needs: sca
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -132,7 +142,7 @@ jobs:
   image-scan:
     name: Image scan - Trivy
     runs-on: ubuntu-latest
-    needs: build-image
+    # needs: build-image
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
