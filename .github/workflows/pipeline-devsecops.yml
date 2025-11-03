@@ -62,8 +62,8 @@ jobs:
         with:
           args: >
             -Dsonar.organization=isadiazb
-            -Dsonar.projectKey=devsecops-final-iidb
-            -Dsonar.branch.name=main
+            -Dsonar.projectKey=isadiazb_devsecops-final-iidb
+            -Dsonar.branch.name=feat-pipeline
             -Dsonar.qualitygate.wait=true
 
 
