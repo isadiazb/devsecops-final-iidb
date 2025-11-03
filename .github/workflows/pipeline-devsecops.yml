@@ -121,9 +121,7 @@ jobs:
 
       # Guardamos el tag de la imagen en una variable para usarla en otros jobs
       - name: Save image reference
-        run: |
-          # Esto permite usar IMAGE_REF en otros jobs
-          echo "IMAGE_REF=local-image:dev-${{ github.run_id }}" >> $GITHUB_ENV
+        run: echo "IMAGE_REF=local-image:dev-${{ github.run_id }}" >> $GITHUB_ENV
           # $GITHUB_ENV es la forma correcta de pasar variables entre jobs
 
 # --------------------------
