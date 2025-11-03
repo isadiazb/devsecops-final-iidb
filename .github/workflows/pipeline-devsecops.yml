@@ -132,10 +132,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # DEBUG: mostramos el tag que vamos a usar
-      - name: Debug: show image tag
-        run: echo "IMAGE TAG = ${{ needs.build-image.outputs.image-tag }}"
-
       # Escaneamos la imagen Docker que construimos
       - name: Run Trivy scan
         uses: aquasecurity/trivy-action@0.33.0
